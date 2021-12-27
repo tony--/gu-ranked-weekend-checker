@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <!-- Match count logic ported from wield and asder338 php scripts -->
+    <!--
+        TODO: refactor for readability and DRYness
+        TODO: add error handler for better DRYness
+        TODO: add fancier loading indicator
+        TODO: add more ways to find Gods Unchained id
+        TODO: pull up constants
+        TODO: default to iframe empty, only load if it should be displayed
+    -->
+    <title>Gods Unchained Latest Ranked Weekend</title>
+  </head>
+  <body>
+    <h1>Gods Unchained Last Ranked Weekend</h1>
+    <hr>
+    <div id="last-ranked-weekend-bounds"></div>
+    <div id="how-to-find">
+        <hr>
+        How to find Gods Unchained User Id:<br>
+        <iframe id="reddit-embed" src="https://www.redditmedia.com/r/GodsUnchained/comments/r5jswd/gudecks_user_id/hmnn2f1/?depth=1&amp;showmore=false&amp;embed=true&amp;showmedia=false" sandbox="allow-scripts allow-same-origin allow-popups" style="border: none;" height="176" width="640" scrolling="no"></iframe>
+    </div>
+    <hr>
+    <div id="hello-saved-user"></div>
+    <button id="set-user-id">Set Gods Unchained User Id</button>
+    <hr>
+    <p id="summary">Loading data</p>
+  <script>
+    //get the latest ranked weekend start/end
+    //set baseline date as a known ranked weekend start, 12/24 12:00:00:00 UTC
+    var latestRankedWeekendOffset = (7 - 5 + new Date().getUTCDay()) % 7;
+    var latestRankedWeekendStart = new Date();
+    latestRankedWeekendStart.setDate(new Date().getDate() - latestRankedWeekendOffset);
+    latestRankedWeekendStart.setUTCHours(12, 0, 0, 0);
+    var latestRankedWeekendStartTimestamp = parseInt((latestRankedWeekendStart.getTime() / 1000).toFixed(0));
+    var latestRankedWeekendEnd = new Date(latestRankedWeekendStart);
+    latestRankedWeekendEnd.setDate(latestRankedWeekendStart.getDate() + 3);
+    latestRankedWeekendEnd.setUTCHours(12, 0, 0, 0);
+    var latestRankedWeekendEndTimestamp = parseInt((latestRankedWeekendEnd.getTime() / 1000).toFixed(0));
+
+    window.onload = function() {
+        //display last ranked weekend start/finish
+        document.getElementById("last-ranked-weekend-bounds").innerText = latestRankedWeekendStart.toString() + " - " + latestRankedWeekendEnd.toString();
+        window.setUserIdButton = document.getElementById("set-user-id");
+        var user_id = localStorage.getItem("gu_user_id");
+
+        if(user_id != null) {
+            var userRequest = "https://api.godsunchained.com/v0/properties?user_id=" + user_id;
+            window.setUserIdButton.innerText = "Click here to sign out."
+            fetch(userRequest)
+                .then(
+                    function(response) {
+                        if (response.status !== 200) {
+                            return;
+                        }
+                        response.json().then(function(data) {
+                            var records = data.records;
+                            if(records != null) {
+                                var username = records[0].username;
+                                document.getElementById("hello-saved-user").innerHTML = "Hello " + username + ".<br>";
+                            }
+                        });
+                    }
+                )
+                .catch(function(err) {
+                });        
+
+            document.getElementById("how-to-find").innerHTML = "";
+            window.setUserIdButton.onclick = function() {
+                localStorage.removeItem("gu_user_id");
+                location.reload();
+            }
+            getRankedWeekendWinsAndLossesForUser(user_id);
+        } else {
+            window.setUserIdButton.onclick = function() {
+                window.setUserIdButton.disabled = true;
+                document.getElementById("how-to-find").innerHTML = "";
+                user_id = prompt('Please enter your Gods Unchained user id.');
+                //how to find user id: https://www.reddit.com/r/GodsUnchained/comments/r5jswd/comment/hmnn2f1/?utm_source=share&utm_medium=web2x&context=3
+
+                if(user_id && user_id != null) {
+                    localStorage.setItem("gu_user_id", user_id);
+                    getRankedWeekendWinsAndLossesForUser(user_id);
+                }
+            }   
+        }
+    }
+    function getRankedWeekendWinsAndLossesForUser(user_id) {
+        
+        //get the ranked weekend wins and losses
+        var summary_elem = document.getElementById("summary");
+        //start loading indicator
+        var loadingDotsTimer = setInterval(function(){
+            summary_elem.innerText += ".";
+        }, 1000);
+
+        var
+            win_data = null,
+            loss_data = null,
+            summary = null;
+        
+        //wins
+        var winRequest = "https://api.godsunchained.com/v0/match?page=1&perPage=25&player_won=" + user_id + "&start_time=" + latestRankedWeekendStartTimestamp + "-" + latestRankedWeekendEndTimestamp;
+        fetch(winRequest)
+            .then(
+                function(response) {
+                if (response.status !== 200) {
+                    summary_elem.innerHTML = "Gods Unchained API seems to be down.<br>" + response.status + ":" + response.statusText;
+                    console.log('Looks like there was a problem. Status Code: ' + response.status);
+                    clearInterval(loadingDotsTimer);
+                    return;
+                }
+
+                // Examine the text in the response
+                response.json().then(function(data) {
+                    win_data = data;
+                    getRankedWeekendResults();
+                });
+                }
+            )
+            .catch(function(err) {
+                clearInterval(loadingDotsTimer);
+                console.log('Fetch Error :-S', err);
+            });
+
+        //losses
+        var lossRequest = "https://api.godsunchained.com/v0/match?page=1&perPage=25&player_lost=" + user_id + "&start_time=" + latestRankedWeekendStartTimestamp + "-" + latestRankedWeekendEndTimestamp;
+        fetch(lossRequest)
+            .then(
+                function(response) {
+                if (response.status !== 200) {
+                    summary_elem.innerHTML = "Gods Unchained API seems to be down.<br>" + response.status + ":" + response.statusText;
+                    console.log('Looks like there was a problem. Status Code: ' + response.status);
+                    clearInterval(loadingDotsTimer);
+                    return;
+                }
+
+                // Examine the text in the response
+                response.json().then(function(data) {
+                    loss_data = data;
+                    getRankedWeekendResults();
+                });
+                }
+            )
+            .catch(function(err) {
+                clearInterval(loadingDotsTimer);
+                console.log('Fetch Error :-S', err);
+            });
+                
+        function getRankedWeekendResults() {
+
+            clearInterval(loadingDotsTimer);
+            
+            if(win_data==null || loss_data==null){
+                return;
+            }
+
+            //combine wins and losses
+            var results = win_data.records.concat(loss_data.records);
+            //sort the results
+            results.sort(
+                function(a, b) {
+                    return a.start_time - b.start_time;
+                }
+            );
+            //count wins and losses
+            var counter = 0,
+                wins = 0,
+                losses = 0,
+                summaryHTML = "";
+            
+            for(let i=0;i<results.length;i++) {
+                var element = results[i];
+                if(element.total_rounds > 5) {
+                    counter++;
+
+                    var d = new Date(element.start_time * 1000);
+                    
+                    if(element.player_won==user_id) {
+                        var line = counter + ": " + d + " WIN";
+                        summaryHTML += line + "</br>";
+                        wins++;
+                    } else {
+                        var line = counter + ": " + d + " LOSS";
+                        summaryHTML += line + "</br>";
+                        losses++
+                    }
+                    if(counter == 25 || (i+1 == results.length)) {
+                        var line = "------------------------------------";
+                        summaryHTML += line + "</br>";
+                        line = "Weekend Event:  Wins: " + wins + " | Losses: " + losses + " | Total: "  + counter;
+                        summaryHTML += line + "</br>";
+                        summary_elem.innerHTML = summary_elem;
+                        break;
+                    }
+                }
+            }
+
+            summary_elem.innerHTML = summaryHTML;
+            window.setUserIdButton.disabled = false;
+        }
+    }
+    
+  </script>
+  </body>
+</html>
