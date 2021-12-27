@@ -3,15 +3,18 @@
   <head>
     <meta charset="utf-8">
     <!-- Match count logic ported from wield and asder338 php scripts -->
+    <!-- Thanks to zaeleni for testing, input and for supporting so many on Gods Unchained #api-and-dev-->
     <!--
+        Yes, it's ugly, that's why I have a TODOs list!
         TODO: refactor for readability and DRYness
         TODO: add error handler for better DRYness
         TODO: add fancier loading indicator
-        TODO: add more ways to find Gods Unchained id
+        TODO: add style
         TODO: pull up constants
         TODO: default to iframe empty, only load if it should be displayed
         TODO: compare user-provided user_id with first record 
     -->
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-fork-ribbon-css/0.2.3/gh-fork-ribbon.min.css" />
     <style>
         .github-fork-ribbon.right-top:before {
@@ -37,6 +40,7 @@
     <button id="set-user-id">Set Gods Unchained User Id</button>
     <hr>
     <p id="summary"></p>
+    <p id="blessings-summary">Blessing of the Gods summary... coming soon!</p>
   <script>
     //get the latest ranked weekend start/end
     //set baseline date as a known ranked weekend start, 12/24 12:00:00:00 UTC
@@ -220,6 +224,26 @@
 
             summary_elem.innerHTML = summaryHTML;
             window.setUserIdButton.disabled = false;
+            checkBlessingOfTheGods();
+        }
+
+        function checkBlessingOfTheGods() {
+            /*
+                Blessing of the Gods logic
+                Play 20 or more ranked games
+                Win 7 or more ranked games
+                Pass four rounds of each ranked game
+                Be at least Rank 4 (Purified Iron) on Gods Unchained by the end of the campaign to qualify
+                Play versus games with at least 17 unique opponents out of 20 or more ranked games played
+                + 1 Bonus point - Play 40 ranked games + Win 14 ranked games + play against 34 unique opponents
+                + 1 Bonus point - Play 60 ranked games + Win 21 ranked games + play against 51 unique opponents
+
+                Reference:
+                https://support.godsunchained.com/hc/en-us/articles/4408750384655-Blessing-of-the-GODS-Play-to-Earn-event-Frequently-Asked-Questions-FAQ-
+
+                Get rank:
+                https://api.godsunchained.com/v0/rank?user_id=1572970&game_mode=13
+            */            
         }
     }
     
