@@ -110,7 +110,7 @@
             summary = null;
         
         //wins
-        var winRequest = "https://api.godsunchained.com/v0/match?page=1&perPage=25&player_won=" + user_id + "&start_time=" + latestRankedWeekendStartTimestamp + "-" + latestRankedWeekendEndTimestamp;
+        var winRequest = "https://api.godsunchained.com/v0/match?page=1&perPage=30&player_won=" + user_id + "&start_time=" + latestRankedWeekendStartTimestamp + "-" + latestRankedWeekendEndTimestamp;
         fetch(winRequest)
             .then(
                 function(response) {
@@ -199,6 +199,8 @@
                         var line = "------------------------------------";
                         summaryHTML += line + "</br>";
                         line = "Weekend Event:  Wins: " + wins + " | Losses: " + losses + " | Total: "  + counter;
+                        line += " | Bonus pack " + win_data.records.length + "/30. ";
+                        line += (win_data.records.length>=30) ? "Done!" : 30 - win_data.records.length + " to go.";
                         summaryHTML += line + "</br>";
                         summary_elem.innerHTML = summary_elem;
                         break;
