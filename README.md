@@ -1,0 +1,2 @@
+# gu-ranked-weekend-checker
+ 
