@@ -27,14 +27,16 @@
     <div id="last-ranked-weekend-bounds"></div>
     <div id="how-to-find">
         <hr>
-        How to find Gods Unchained User Id:<br>
+        <u>How to find Gods Unchained User Id</u><br>
+        Log in to https://apollo.gg (your user id is the number after "3", shown under your user name)<br>
+        -or-<br>
         <iframe id="reddit-embed" src="https://www.redditmedia.com/r/GodsUnchained/comments/r5jswd/gudecks_user_id/hmnn2f1/?depth=1&amp;showmore=false&amp;embed=true&amp;showmedia=false" sandbox="allow-scripts allow-same-origin allow-popups" style="border: none;" height="176" width="640" scrolling="no"></iframe>
     </div>
     <hr>
     <div id="hello-saved-user"></div>
     <button id="set-user-id">Set Gods Unchained User Id</button>
     <hr>
-    <p id="summary">Loading data</p>
+    <p id="summary"></p>
   <script>
     //get the latest ranked weekend start/end
     //set baseline date as a known ranked weekend start, 12/24 12:00:00:00 UTC
@@ -83,12 +85,16 @@
             getRankedWeekendWinsAndLossesForUser(user_id);
         } else {
             window.setUserIdButton.onclick = function() {
-                window.setUserIdButton.disabled = true;
-                document.getElementById("how-to-find").innerHTML = "";
                 user_id = prompt('Please enter your Gods Unchained user id.');
                 //how to find user id: https://www.reddit.com/r/GodsUnchained/comments/r5jswd/comment/hmnn2f1/?utm_source=share&utm_medium=web2x&context=3
 
                 if(user_id && user_id != null) {
+                    if(/^\d+$/.test(user_id) != true) {
+                        alert("A Gods Unchained user id consists of numbers only.  Please enter a Gods Unchained user id.")
+                        return;
+                    }
+                    window.setUserIdButton.disabled = true;
+                    document.getElementById("how-to-find").innerHTML = "";
                     localStorage.setItem("gu_user_id", user_id);
                     getRankedWeekendWinsAndLossesForUser(user_id);
                 }
@@ -101,7 +107,11 @@
         var summary_elem = document.getElementById("summary");
         //start loading indicator
         var loadingDotsTimer = setInterval(function(){
-            summary_elem.innerText += ".";
+            if(summary_elem.innerText=="") {
+                summary_elem.innerText = "Loading data";
+            } else {
+                summary_elem.innerText += ".";
+            }
         }, 1000);
 
         var
