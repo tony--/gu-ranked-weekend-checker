@@ -364,6 +364,12 @@
             clearInterval(loadingDotsTimer);
 
             //combine wins and losses
+            if(win_data.records == null) {
+                win_data.records = new Array(0);
+            }
+            if(loss_data.records == null) {
+                loss_data.records = new Array(0);
+            }
             var results = win_data.records.concat(loss_data.records);
             //sort the results
             results.sort(
@@ -389,17 +395,17 @@
                         losses++;
                     }
                     if(counter == 25 || (i+1 == results.length)) {
-                        var line = "<hr>";
-                        summaryHTML += line;
-                        line = "Weekend Event:  Wins: " + wins + " | Losses: " + losses + " | Total: "  + counter;
-                        line += " | Bonus pack " + win_data.records.length + "/30. ";
-                        line += (win_data.records.length>=30) ? "Done!" : 30 - win_data.records.length + " to go.";
-                        summaryHTML += line;
-                        summary_elem.innerHTML = summary_elem;
                         break;
                     }
                 }
             }
+
+            var line = "<hr>";
+            line += "Weekend Event:  Wins: " + wins + " | Losses: " + losses + " | Total: "  + counter;
+            line += " | Bonus pack " + win_data.records.length + "/30. ";
+            line += (win_data.records.length>=30) ? "Done!" : 30 - win_data.records.length + " to go.";
+            summaryHTML += line;
+            summary_elem.innerHTML = summary_elem;            
 
             summary_elem.innerHTML = summaryHTML;
             window.setUserIdButton.disabled = false;
