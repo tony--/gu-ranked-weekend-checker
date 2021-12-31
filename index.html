@@ -40,19 +40,33 @@
     <button id="set-user-id">Set Gods Unchained User Id</button>
     <hr>
     <p id="summary"></p>
-    <p id="blessings-summary">Blessing of the Gods summary... coming soon!</p>
+    <p id="blessing-summary"></p>
   <script>
     //get the latest ranked weekend start/end
     //set baseline date as a known ranked weekend start, 12/24 12:00:00:00 UTC
-    var latestRankedWeekendOffset = (7 - 5 + new Date().getUTCDay()) % 7;
+    var latestRankedWeekendOffset = (new Date().getUTCDay() + 2) % 7; //offset to make Friday the first day of the week
     var latestRankedWeekendStart = new Date();
-    latestRankedWeekendStart.setDate(new Date().getDate() - latestRankedWeekendOffset);
+    latestRankedWeekendStart.setUTCDate(latestRankedWeekendStart.getUTCDate() - latestRankedWeekendOffset);
     latestRankedWeekendStart.setUTCHours(12, 0, 0, 0);
+    //fix same-day error in algorithm
+    if (Date.now() < latestRankedWeekendStart) {
+        latestRankedWeekendStart.setUTCDate(latestRankedWeekendStart.getUTCDate() - 7);
+    }
     var latestRankedWeekendStartTimestamp = parseInt((latestRankedWeekendStart.getTime() / 1000).toFixed(0));
     var latestRankedWeekendEnd = new Date(latestRankedWeekendStart);
-    latestRankedWeekendEnd.setDate(latestRankedWeekendStart.getDate() + 3);
+    latestRankedWeekendEnd.setUTCDate(latestRankedWeekendStart.getUTCDate() + 3);
     latestRankedWeekendEnd.setUTCHours(12, 0, 0, 0);
     var latestRankedWeekendEndTimestamp = parseInt((latestRankedWeekendEnd.getTime() / 1000).toFixed(0));
+
+    //get the current Blessing of the $GODS start/end
+    var currentBotgStart = latestRankedWeekendEnd;
+    if (Date.now() < currentBotgStart) {
+        currentBotgStart.setUTCDate(currentBotgStart.getUTCDate() - 7);
+    }
+    var currentBotgStartTimestamp = parseInt((currentBotgStart.getTime() / 1000).toFixed(0));
+    var currentBotgEnd = new Date(currentBotgStart);
+    currentBotgEnd.setUTCDate(currentBotgStart.getUTCDate() + 7);
+    var currentBotgEndTimestamp = parseInt((currentBotgEnd.getTime() / 1000).toFixed(0));
 
     window.onload = function() {
         //display last ranked weekend start/finish
@@ -121,11 +135,15 @@
         var
             win_data = null,
             loss_data = null,
-            summary = null;
-        
+            summary = null,
+            botg_win_data = null,
+            botg_loss_data = null,
+            blessing_data = null;
+
         //wins
-        var winRequest = "https://api.godsunchained.com/v0/match?page=1&perPage=30&player_won=" + user_id + "&start_time=" + latestRankedWeekendStartTimestamp + "-" + latestRankedWeekendEndTimestamp;
-        fetch(winRequest)
+        var winCountRequest = "https://api.godsunchained.com/v0/match?player_won=" + user_id + "&start_time=" + latestRankedWeekendStartTimestamp + "-" + latestRankedWeekendEndTimestamp + "&page=1&perPage=0";
+        var winRequest = "https://api.godsunchained.com/v0/match?player_won=" + user_id + "&start_time=" + latestRankedWeekendStartTimestamp + "-" + latestRankedWeekendEndTimestamp + "&page=1&perPage=";
+        fetch(winCountRequest)
             .then(
                 function(response) {
                 if (response.status !== 200) {
@@ -135,10 +153,31 @@
                     return;
                 }
 
-                // Examine the text in the response
-                response.json().then(function(data) {
-                    win_data = data;
-                    getRankedWeekendResults();
+                // Get wins total from response, append to winRequest
+                response.json().then(function(data) {                    
+                    winRequest += data.total;
+                    fetch(winRequest)
+                        .then(
+                            function(response) {
+                            if (response.status !== 200) {
+                                summary_elem.innerHTML = "Gods Unchained API seems to be down.<br>" + response.status + ":" + response.statusText;
+                                console.log('Looks like there was a problem. Status Code: ' + response.status);
+                                clearInterval(loadingDotsTimer);
+                                return;
+                            }
+
+                            // Examine the text in the response
+                            response.json().then(function(data) {
+                                win_data = data;
+                                getRankedWeekendResults();
+                            });
+                            }
+                        )
+                        .catch(function(err) {
+                            clearInterval(loadingDotsTimer);
+                            console.log('Fetch Error :-S', err);
+                        });
+                    
                 });
                 }
             )
@@ -148,8 +187,9 @@
             });
 
         //losses
-        var lossRequest = "https://api.godsunchained.com/v0/match?page=1&perPage=25&player_lost=" + user_id + "&start_time=" + latestRankedWeekendStartTimestamp + "-" + latestRankedWeekendEndTimestamp;
-        fetch(lossRequest)
+        var lossCountRequest = "https://api.godsunchained.com/v0/match?player_lost=" + user_id + "&start_time=" + latestRankedWeekendStartTimestamp + "-" + latestRankedWeekendEndTimestamp  + "&page=1&perPage=0";
+        var lossRequest = "https://api.godsunchained.com/v0/match?player_lost=" + user_id + "&start_time=" + latestRankedWeekendStartTimestamp + "-" + latestRankedWeekendEndTimestamp  + "&page=1&perPage=";
+        fetch(lossCountRequest)
             .then(
                 function(response) {
                 if (response.status !== 200) {
@@ -159,10 +199,31 @@
                     return;
                 }
 
-                // Examine the text in the response
-                response.json().then(function(data) {
-                    loss_data = data;
-                    getRankedWeekendResults();
+                // Get losses total from response, append to winRequest
+                response.json().then(function(data) {                    
+                    lossRequest += data.total;
+                    fetch(lossRequest)
+                        .then(
+                            function(response) {
+                            if (response.status !== 200) {
+                                summary_elem.innerHTML = "Gods Unchained API seems to be down.<br>" + response.status + ":" + response.statusText;
+                                console.log('Looks like there was a problem. Status Code: ' + response.status);
+                                clearInterval(loadingDotsTimer);
+                                return;
+                            }
+
+                            // Examine the text in the response
+                            response.json().then(function(data) {
+                                loss_data = data;
+                                getRankedWeekendResults();
+                            });
+                            }
+                        )
+                        .catch(function(err) {
+                            clearInterval(loadingDotsTimer);
+                            console.log('Fetch Error :-S', err);
+                        });
+                    
                 });
                 }
             )
@@ -170,14 +231,141 @@
                 clearInterval(loadingDotsTimer);
                 console.log('Fetch Error :-S', err);
             });
-                
+        
+        //Blessing of the $GODS
+        var botg_wins = 0,
+            botg_losses = 0;
+        var botgWinCountRequest = "https://api.godsunchained.com/v0/match?player_won=" + user_id + "&start_time=" + currentBotgStartTimestamp + "-" + currentBotgEndTimestamp  + "&page=1&perPage=0";
+        var botgWinRequest = "https://api.godsunchained.com/v0/match?player_won=" + user_id + "&start_time=" + currentBotgStartTimestamp + "-" + currentBotgEndTimestamp  + "&page=1&perPage=";
+        fetch(botgWinCountRequest)
+            .then(
+                function(response) {
+                if (response.status !== 200) {
+                    summary_elem.innerHTML = "Gods Unchained API seems to be down.<br>" + response.status + ":" + response.statusText;
+                    console.log('Looks like there was a problem. Status Code: ' + response.status);
+                    clearInterval(loadingDotsTimer);
+                    return;
+                }
+
+                // Get wins total from response, append to winRequest
+                response.json().then(function(data) {     
+                    botg_wins = data.total;               
+                    botgWinRequest += botg_wins;
+                    fetch(botgWinRequest)
+                        .then(
+                            function(response) {
+                            if (response.status !== 200) {
+                                summary_elem.innerHTML = "Gods Unchained API seems to be down.<br>" + response.status + ":" + response.statusText;
+                                console.log('Looks like there was a problem. Status Code: ' + response.status);
+                                clearInterval(loadingDotsTimer);
+                                return;
+                            }
+
+                            // Examine the text in the response
+                            response.json().then(function(data) {
+                                botg_win_data = data;
+                                checkBlessingOfTheGods();
+                            });
+                            }
+                        )
+                        .catch(function(err) {
+                            clearInterval(loadingDotsTimer);
+                            console.log('Fetch Error :-S', err);
+                        });
+                    
+                });
+                }
+            )
+            .catch(function(err) {
+                clearInterval(loadingDotsTimer);
+                console.log('Fetch Error :-S', err);
+            });
+
+        var botgLossCountRequest = "https://api.godsunchained.com/v0/match?player_lost=" + user_id + "&start_time=" + currentBotgStartTimestamp + "-" + currentBotgEndTimestamp  + "&page=1&perPage=0";
+        var botgLossRequest = "https://api.godsunchained.com/v0/match?player_lost=" + user_id + "&start_time=" + currentBotgStartTimestamp + "-" + currentBotgEndTimestamp  + "&page=1&perPage=";
+        fetch(botgLossCountRequest)
+            .then(
+                function(response) {
+                if (response.status !== 200) {
+                    summary_elem.innerHTML = "Gods Unchained API seems to be down.<br>" + response.status + ":" + response.statusText;
+                    console.log('Looks like there was a problem. Status Code: ' + response.status);
+                    clearInterval(loadingDotsTimer);
+                    return;
+                }
+
+                // Get losses total from response, append to winRequest
+                response.json().then(function(data) {      
+                    botg_losses = data.total;              
+                    botgLossRequest += botg_losses;
+                    fetch(botgLossRequest)
+                        .then(
+                            function(response) {
+                            if (response.status !== 200) {
+                                summary_elem.innerHTML = "Gods Unchained API seems to be down.<br>" + response.status + ":" + response.statusText;
+                                console.log('Looks like there was a problem. Status Code: ' + response.status);
+                                clearInterval(loadingDotsTimer);
+                                return;
+                            }
+
+                            // Examine the text in the response
+                            response.json().then(function(data) {
+                                botg_loss_data = data;
+                                checkBlessingOfTheGods();
+                            });
+                            }
+                        )
+                        .catch(function(err) {
+                            clearInterval(loadingDotsTimer);
+                            console.log('Fetch Error :-S', err);
+                        });
+                    
+                });
+                }
+            )
+            .catch(function(err) {
+                clearInterval(loadingDotsTimer);
+                console.log('Fetch Error :-S', err);
+            });
+        
+        //rank
+        var rankRequest = "https://api.godsunchained.com/v0/rank?game_mode=13&user_id=" + user_id;
+        var blessing_summary_elem = document.getElementById("blessing-summary");
+        fetch(rankRequest)
+            .then(
+                function(response) {
+                if (response.status !== 200) {
+                    console.log('Looks like there was a problem. Status Code: ' + response.status);
+                    return;
+                }
+
+                // Examine the text in the response
+                response.json().then(function(data) {
+                    blessing_data = data;
+                    getRankedWeekendResults();
+                });
+                }
+            )
+            .catch(function(err) {
+                console.log('Fetch Error :-S', err);
+            });
+
+        //count wins and losses
+        var counter = 0,
+            wins = 0,
+            losses = 0,
+            botg_wins = 0,
+            botg_losses = 0,
+            summaryHTML = "",
+            botgOpponentSet = new Set(),
+            totalGames = 0;
+
         function getRankedWeekendResults() {
 
-            clearInterval(loadingDotsTimer);
-            
             if(win_data==null || loss_data==null){
                 return;
             }
+
+            clearInterval(loadingDotsTimer);
 
             //combine wins and losses
             var results = win_data.records.concat(loss_data.records);
@@ -187,15 +375,10 @@
                     return a.start_time - b.start_time;
                 }
             );
-            //count wins and losses
-            var counter = 0,
-                wins = 0,
-                losses = 0,
-                summaryHTML = "";
             
             for(let i=0;i<results.length;i++) {
                 var element = results[i];
-                if(element.total_rounds > 5) {
+                if(element.total_rounds >= 4) {
                     counter++;
 
                     var d = new Date(element.start_time * 1000);
@@ -207,15 +390,15 @@
                     } else {
                         var line = counter + ": " + d + " LOSS";
                         summaryHTML += line + "</br>";
-                        losses++
+                        losses++;
                     }
                     if(counter == 25 || (i+1 == results.length)) {
-                        var line = "------------------------------------";
-                        summaryHTML += line + "</br>";
+                        var line = "<hr>";
+                        summaryHTML += line;
                         line = "Weekend Event:  Wins: " + wins + " | Losses: " + losses + " | Total: "  + counter;
                         line += " | Bonus pack " + win_data.records.length + "/30. ";
                         line += (win_data.records.length>=30) ? "Done!" : 30 - win_data.records.length + " to go.";
-                        summaryHTML += line + "</br>";
+                        summaryHTML += line;
                         summary_elem.innerHTML = summary_elem;
                         break;
                     }
@@ -224,10 +407,14 @@
 
             summary_elem.innerHTML = summaryHTML;
             window.setUserIdButton.disabled = false;
-            checkBlessingOfTheGods();
         }
 
         function checkBlessingOfTheGods() {
+            if(botg_win_data==null || botg_loss_data==null ){
+                return;
+            }
+            
+            totalGames = botg_wins + botg_losses;
             /*
                 Blessing of the Gods logic
                 Play 20 or more ranked games
@@ -243,10 +430,83 @@
 
                 Get rank:
                 https://api.godsunchained.com/v0/rank?user_id=1572970&game_mode=13
-            */            
+            */
+
+            //combine wins and losses
+            var results = botg_win_data.records.concat(botg_loss_data.records);
+            //sort the results
+            results.sort(
+                function(a, b) {
+                    return a.start_time - b.start_time;
+                }
+            );
+            
+            for(let i=0;i<results.length;i++) {
+                var element = results[i];
+                if(element.total_rounds >= 4) {
+                    if(element.player_won==user_id) {
+                        botgOpponentSet.add(element.player_lost);
+                    } else {
+                        botgOpponentSet.add(element.player_won);
+                    }
+                }
+            }
+
+            var rank = blessing_data.records[0].rank_level;
+            // Purified Iron, Impact Metoerite, Astral Meteorite, Twilight Shadow (Rank 4-7): 1 base point
+            // Midnight Shadow, Auric Gold, Solar Gold (Rank 8-10): 1.5 base points
+            // Ethereal Diamon, Mythic (Rank 11-12): 2 base points
+            var basePoints =
+                (rank<8) ? 1 :
+                (rank<11) ? 1.5 : 2;
+
+            var blessingHTML = "<hr>";
+            blessingHTML += "Blessing of the $GODS:  <br>";
+            if(rank<4) {
+                blessingHTML += "Not qualified, rank must be at least 4 (Purified Iron)."
+                return;
+            } else {
+                blessingHTML += "Rank " + rank + "<br>";
+            }
+            var points = 0;
+            botgOpponents = botgOpponentSet.size;
+
+            //Base point - Play 20 ranked games + Win 7 ranked games + play against 17 unique opponent
+            blessingHTML += "Base points "
+            if(totalGames >=20 && botg_wins >= 7 && botgOpponents >=17) {
+                blessingHTML += "completed, " + basePoints;
+                blessingHTML += (basePoints > 1) ? " points" : " point";
+                blessingHTML += " for rank " + rank + "<br>";
+                points = basePoints;
+            } else {
+                blessingHTML += totalGames > 20 ? 20 : totalGames + "/20 ranked games, ";
+                blessingHTML += botg_wins > 7 ? 7 : botg_wins + "/7 wins, ";
+                blessingHTML += botgOpponents > 17 ? 17 : botgOpponents + "/17 unique opponents. <br>";
+            }
+            //Bonus point 1 - Play 40 ranked games + Win 14 ranked games + play against 34 unique opponents
+            blessingHTML += "Bonus point 1: "
+            if(totalGames >=40 && botg_wins >= 14 && botgOpponents >=34) {
+                blessingHTML += "completed<br>"
+                points += 1;
+            } else {
+                blessingHTML += totalGames > 40 ? 40 : totalGames + "/40 ranked games, ";
+                blessingHTML += botg_wins > 14 ? 14 : botg_wins + "/14 wins, ";
+                blessingHTML += botgOpponents > 34 ? 34 : botgOpponents + "/24 unique opponents. <br>";
+            }
+            //Bonus point 2 - Play 60 ranked games + Win 21 ranked games + play against 51 unique opponents
+            blessingHTML += "Bonus point 2: "
+            if(totalGames >=60 && botg_wins >= 21 && botgOpponents >=51) {
+                blessingHTML += "completed!<br>"
+                points += 1;
+            } else {
+                blessingHTML += totalGames > 60 ? 60 : totalGames + "/60 ranked games, ";
+                blessingHTML += botg_wins > 21 ? 21 : botg_wins + "/21 wins, ";
+                blessingHTML += botgOpponents > 51 ? 51 : botgOpponents + "/51 unique opponents. <br>";
+            }
+            blessingHTML += "Total points: " + points;
+            blessing_summary_elem.innerHTML = blessingHTML;
         }
     }
-    
   </script>
   </body>
 </html>
