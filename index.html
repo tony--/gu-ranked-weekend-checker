@@ -233,9 +233,7 @@
             });
         
         //Blessing of the $GODS
-        var botg_wins = 0,
-            botg_losses = 0;
-        var botgWinCountRequest = "https://api.godsunchained.com/v0/match?player_won=" + user_id + "&start_time=" + currentBotgStartTimestamp + "-" + currentBotgEndTimestamp  + "&page=1&perPage=0";
+       var botgWinCountRequest = "https://api.godsunchained.com/v0/match?player_won=" + user_id + "&start_time=" + currentBotgStartTimestamp + "-" + currentBotgEndTimestamp  + "&page=1&perPage=0";
         var botgWinRequest = "https://api.godsunchained.com/v0/match?player_won=" + user_id + "&start_time=" + currentBotgStartTimestamp + "-" + currentBotgEndTimestamp  + "&page=1&perPage=";
         fetch(botgWinCountRequest)
             .then(
@@ -249,8 +247,7 @@
 
                 // Get wins total from response, append to winRequest
                 response.json().then(function(data) {     
-                    botg_wins = data.total;               
-                    botgWinRequest += botg_wins;
+                    botgWinRequest += data.total;
                     fetch(botgWinRequest)
                         .then(
                             function(response) {
@@ -295,8 +292,7 @@
 
                 // Get losses total from response, append to winRequest
                 response.json().then(function(data) {      
-                    botg_losses = data.total;              
-                    botgLossRequest += botg_losses;
+                    botgLossRequest += data.total;
                     fetch(botgLossRequest)
                         .then(
                             function(response) {
@@ -414,7 +410,6 @@
                 return;
             }
             
-            totalGames = botg_wins + botg_losses;
             /*
                 Blessing of the Gods logic
                 Play 20 or more ranked games
@@ -445,12 +440,15 @@
                 var element = results[i];
                 if(element.total_rounds >= 4) {
                     if(element.player_won==user_id) {
+                        botg_wins++;
                         botgOpponentSet.add(element.player_lost);
                     } else {
+                        botg_losses++;
                         botgOpponentSet.add(element.player_won);
                     }
                 }
             }
+            totalGames = botg_wins + botg_losses;
 
             var rank = blessing_data.records[0].rank_level;
             // Purified Iron, Impact Metoerite, Astral Meteorite, Twilight Shadow (Rank 4-7): 1 base point
