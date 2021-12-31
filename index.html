@@ -479,9 +479,9 @@
                 blessingHTML += " for rank " + rank + "<br>";
                 points = basePoints;
             } else {
-                blessingHTML += totalGames > 20 ? 20 : totalGames + "/20 ranked games, ";
-                blessingHTML += botg_wins > 7 ? 7 : botg_wins + "/7 wins, ";
-                blessingHTML += botgOpponents > 17 ? 17 : botgOpponents + "/17 unique opponents. <br>";
+                blessingHTML += (totalGames > 20 ? 20 : totalGames) + "/20 ranked games, ";
+                blessingHTML += (botg_wins > 7 ? 7 : botg_wins) + "/7 wins, ";
+                blessingHTML += (botgOpponents > 17 ? 17 : botgOpponents) + "/17 unique opponents. <br>";
             }
             //Bonus point 1 - Play 40 ranked games + Win 14 ranked games + play against 34 unique opponents
             blessingHTML += "Bonus point 1: "
@@ -489,9 +489,9 @@
                 blessingHTML += "completed<br>"
                 points += 1;
             } else {
-                blessingHTML += totalGames > 40 ? 40 : totalGames + "/40 ranked games, ";
-                blessingHTML += botg_wins > 14 ? 14 : botg_wins + "/14 wins, ";
-                blessingHTML += botgOpponents > 34 ? 34 : botgOpponents + "/24 unique opponents. <br>";
+                blessingHTML += (totalGames > 40 ? 40 : totalGames) + "/40 ranked games, ";
+                blessingHTML += (botg_wins > 14 ? 14 : botg_wins) + "/14 wins, ";
+                blessingHTML += (botgOpponents > 34 ? 34 : botgOpponents) + "/34 unique opponents. <br>";
             }
             //Bonus point 2 - Play 60 ranked games + Win 21 ranked games + play against 51 unique opponents
             blessingHTML += "Bonus point 2: "
@@ -499,9 +499,9 @@
                 blessingHTML += "completed!<br>"
                 points += 1;
             } else {
-                blessingHTML += totalGames > 60 ? 60 : totalGames + "/60 ranked games, ";
-                blessingHTML += botg_wins > 21 ? 21 : botg_wins + "/21 wins, ";
-                blessingHTML += botgOpponents > 51 ? 51 : botgOpponents + "/51 unique opponents. <br>";
+                blessingHTML += (totalGames > 60 ? 60 : totalGames) + "/60 ranked games, ";
+                blessingHTML += (botg_wins > 21 ? 21 : botg_wins) + "/21 wins, ";
+                blessingHTML += (botgOpponents > 51 ? 51 : botgOpponents) + "/51 unique opponents. <br>";
             }
             blessingHTML += "Total points: " + points;
             blessing_summary_elem.innerHTML = blessingHTML;
