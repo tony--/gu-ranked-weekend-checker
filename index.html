@@ -48,8 +48,12 @@
     var latestRankedWeekendStart = new Date();
     latestRankedWeekendStart.setUTCDate(latestRankedWeekendStart.getUTCDate() - latestRankedWeekendOffset);
     latestRankedWeekendStart.setUTCHours(12, 0, 0, 0);
+    
     //fix same-day error in algorithm
-    if (Date.now() < latestRankedWeekendStart) {
+    var checkDate = Date.now();
+    //checkDate = new Date(2021, 11, 31, 3, 59);
+    console.log(checkDate + " " + latestRankedWeekendStart);
+    if (checkDate < latestRankedWeekendStart) {
         latestRankedWeekendStart.setUTCDate(latestRankedWeekendStart.getUTCDate() - 7);
     }
     var latestRankedWeekendStartTimestamp = parseInt((latestRankedWeekendStart.getTime() / 1000).toFixed(0));
@@ -466,21 +470,23 @@
 
             var blessingHTML = "<hr>";
             blessingHTML += "Blessing of the $GODS:  <br>";
-            if(rank<4) {
-                blessingHTML += "Not qualified, rank must be at least 4 (Purified Iron)."
-                return;
-            } else {
-                blessingHTML += "Rank " + rank + "<br>";
-            }
+            // if(rank<4) {
+            //     blessingHTML += "Not qualified, rank must be at least 4 (Purified Iron)."
+            //     return;
+            // } else {
+            //     blessingHTML += "Rank " + rank + "<br>";
+            // }
             var points = 0;
             botgOpponents = botgOpponentSet.size;
 
             //Base point - Play 20 ranked games + Win 7 ranked games + play against 17 unique opponent
             blessingHTML += "Base points "
             if(totalGames >=20 && botg_wins >= 7 && botgOpponents >=17) {
-                blessingHTML += "completed, " + basePoints;
-                blessingHTML += (basePoints > 1) ? " points" : " point";
-                blessingHTML += " for rank " + rank + "<br>";
+                blessingHTML += "completed";
+                //blessingHTML += "completed, " + basePoints;
+                //blessingHTML += (basePoints > 1) ? " points" : " point";
+                //blessingHTML += " for rank " + rank;
+                blessingHTML += "<br>";
                 points = basePoints;
             } else {
                 blessingHTML += (totalGames > 20 ? 20 : totalGames) + "/20 ranked games, ";
@@ -507,7 +513,7 @@
                 blessingHTML += (botg_wins > 21 ? 21 : botg_wins) + "/21 wins, ";
                 blessingHTML += (botgOpponents > 51 ? 51 : botgOpponents) + "/51 unique opponents. <br>";
             }
-            blessingHTML += "Total points: " + points;
+            //blessingHTML += "Total points: " + points;
             blessing_summary_elem.innerHTML = blessingHTML;
         }
     }
