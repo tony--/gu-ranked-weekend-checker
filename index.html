@@ -40,7 +40,7 @@
     <button id="set-user-id">Set Gods Unchained User Id</button>
     <hr>
     <p id="summary"></p>
-    <p id="blessing-summary"></p>
+
   <script>
     //get the latest ranked weekend start/end
     //set baseline date as a known ranked weekend start, 12/24 12:00:00:00 UTC
@@ -61,16 +61,6 @@
     latestRankedWeekendEnd.setUTCDate(latestRankedWeekendStart.getUTCDate() + 3);
     latestRankedWeekendEnd.setUTCHours(12, 0, 0, 0);
     var latestRankedWeekendEndTimestamp = parseInt((latestRankedWeekendEnd.getTime() / 1000).toFixed(0));
-
-    //get the current Blessing of the $GODS start/end
-    var currentBotgStart = latestRankedWeekendEnd;
-    if (Date.now() < currentBotgStart) {
-        currentBotgStart.setUTCDate(currentBotgStart.getUTCDate() - 7);
-    }
-    var currentBotgStartTimestamp = parseInt((currentBotgStart.getTime() / 1000).toFixed(0));
-    var currentBotgEnd = new Date(currentBotgStart);
-    currentBotgEnd.setUTCDate(currentBotgStart.getUTCDate() + 7);
-    var currentBotgEndTimestamp = parseInt((currentBotgEnd.getTime() / 1000).toFixed(0));
 
     window.onload = function() {
         //display last ranked weekend start/finish
@@ -123,6 +113,7 @@
             }   
         }
     }
+
     function getRankedWeekendWinsAndLossesForUser(user_id) {
         
         //get the ranked weekend wins and losses
@@ -139,10 +130,7 @@
         var
             win_data = null,
             loss_data = null,
-            summary = null,
-            botg_win_data = null,
-            botg_loss_data = null,
-            blessing_data = null;
+            summary = null;
 
         //wins
         var winCountRequest = "https://api.godsunchained.com/v0/match?player_won=" + user_id + "&start_time=" + latestRankedWeekendStartTimestamp + "-" + latestRankedWeekendEndTimestamp + "&page=1&perPage=0";
@@ -236,100 +224,8 @@
                 console.log('Fetch Error :-S', err);
             });
         
-        //Blessing of the $GODS
-       var botgWinCountRequest = "https://api.godsunchained.com/v0/match?player_won=" + user_id + "&start_time=" + currentBotgStartTimestamp + "-" + currentBotgEndTimestamp  + "&page=1&perPage=0";
-        var botgWinRequest = "https://api.godsunchained.com/v0/match?player_won=" + user_id + "&start_time=" + currentBotgStartTimestamp + "-" + currentBotgEndTimestamp  + "&page=1&perPage=";
-        fetch(botgWinCountRequest)
-            .then(
-                function(response) {
-                if (response.status !== 200) {
-                    summary_elem.innerHTML = "Gods Unchained API seems to be down.<br>" + response.status + ":" + response.statusText;
-                    console.log('Looks like there was a problem. Status Code: ' + response.status);
-                    clearInterval(loadingDotsTimer);
-                    return;
-                }
-
-                // Get wins total from response, append to winRequest
-                response.json().then(function(data) {     
-                    botgWinRequest += data.total;
-                    fetch(botgWinRequest)
-                        .then(
-                            function(response) {
-                            if (response.status !== 200) {
-                                summary_elem.innerHTML = "Gods Unchained API seems to be down.<br>" + response.status + ":" + response.statusText;
-                                console.log('Looks like there was a problem. Status Code: ' + response.status);
-                                clearInterval(loadingDotsTimer);
-                                return;
-                            }
-
-                            // Examine the text in the response
-                            response.json().then(function(data) {
-                                botg_win_data = data;
-                                checkBlessingOfTheGods();
-                            });
-                            }
-                        )
-                        .catch(function(err) {
-                            clearInterval(loadingDotsTimer);
-                            console.log('Fetch Error :-S', err);
-                        });
-                    
-                });
-                }
-            )
-            .catch(function(err) {
-                clearInterval(loadingDotsTimer);
-                console.log('Fetch Error :-S', err);
-            });
-
-        var botgLossCountRequest = "https://api.godsunchained.com/v0/match?player_lost=" + user_id + "&start_time=" + currentBotgStartTimestamp + "-" + currentBotgEndTimestamp  + "&page=1&perPage=0";
-        var botgLossRequest = "https://api.godsunchained.com/v0/match?player_lost=" + user_id + "&start_time=" + currentBotgStartTimestamp + "-" + currentBotgEndTimestamp  + "&page=1&perPage=";
-        fetch(botgLossCountRequest)
-            .then(
-                function(response) {
-                if (response.status !== 200) {
-                    summary_elem.innerHTML = "Gods Unchained API seems to be down.<br>" + response.status + ":" + response.statusText;
-                    console.log('Looks like there was a problem. Status Code: ' + response.status);
-                    clearInterval(loadingDotsTimer);
-                    return;
-                }
-
-                // Get losses total from response, append to winRequest
-                response.json().then(function(data) {      
-                    botgLossRequest += data.total;
-                    fetch(botgLossRequest)
-                        .then(
-                            function(response) {
-                            if (response.status !== 200) {
-                                summary_elem.innerHTML = "Gods Unchained API seems to be down.<br>" + response.status + ":" + response.statusText;
-                                console.log('Looks like there was a problem. Status Code: ' + response.status);
-                                clearInterval(loadingDotsTimer);
-                                return;
-                            }
-
-                            // Examine the text in the response
-                            response.json().then(function(data) {
-                                botg_loss_data = data;
-                                checkBlessingOfTheGods();
-                            });
-                            }
-                        )
-                        .catch(function(err) {
-                            clearInterval(loadingDotsTimer);
-                            console.log('Fetch Error :-S', err);
-                        });
-                    
-                });
-                }
-            )
-            .catch(function(err) {
-                clearInterval(loadingDotsTimer);
-                console.log('Fetch Error :-S', err);
-            });
-        
         //rank
         var rankRequest = "https://api.godsunchained.com/v0/rank?game_mode=13&user_id=" + user_id;
-        var blessing_summary_elem = document.getElementById("blessing-summary");
         fetch(rankRequest)
             .then(
                 function(response) {
@@ -340,7 +236,6 @@
 
                 // Examine the text in the response
                 response.json().then(function(data) {
-                    blessing_data = data;
                     getRankedWeekendResults();
                 });
                 }
@@ -353,10 +248,7 @@
         var counter = 0,
             wins = 0,
             losses = 0,
-            botg_wins = 0,
-            botg_losses = 0,
             summaryHTML = "",
-            botgOpponentSet = new Set(),
             totalGames = 0;
 
         function getRankedWeekendResults() {
@@ -415,107 +307,6 @@
             window.setUserIdButton.disabled = false;
         }
 
-        function checkBlessingOfTheGods() {
-            if(botg_win_data==null || botg_loss_data==null ){
-                return;
-            }
-            
-            /*
-                Blessing of the Gods logic
-                Play 20 or more ranked games
-                Win 7 or more ranked games
-                Pass four rounds of each ranked game
-                Be at least Rank 4 (Purified Iron) on Gods Unchained by the end of the campaign to qualify
-                Play versus games with at least 17 unique opponents out of 20 or more ranked games played
-                + 1 Bonus point - Play 40 ranked games + Win 14 ranked games + play against 34 unique opponents
-                + 1 Bonus point - Play 60 ranked games + Win 21 ranked games + play against 51 unique opponents
-
-                Reference:
-                https://support.godsunchained.com/hc/en-us/articles/4408750384655-Blessing-of-the-GODS-Play-to-Earn-event-Frequently-Asked-Questions-FAQ-
-
-                Get rank:
-                https://api.godsunchained.com/v0/rank?user_id=1572970&game_mode=13
-            */
-
-            //combine wins and losses
-            var results = botg_win_data.records.concat(botg_loss_data.records);
-            //sort the results
-            results.sort(
-                function(a, b) {
-                    return a.start_time - b.start_time;
-                }
-            );
-            
-            for(let i=0;i<results.length;i++) {
-                var element = results[i];
-                if(element.total_rounds >= 4) {
-                    if(element.player_won==user_id) {
-                        botg_wins++;
-                        botgOpponentSet.add(element.player_lost);
-                    } else {
-                        botg_losses++;
-                        botgOpponentSet.add(element.player_won);
-                    }
-                }
-            }
-            totalGames = botg_wins + botg_losses;
-
-            var rank = blessing_data.records[0].rank_level;
-            // Purified Iron, Impact Metoerite, Astral Meteorite, Twilight Shadow (Rank 4-7): 1 base point
-            // Midnight Shadow, Auric Gold, Solar Gold (Rank 8-10): 1.5 base points
-            // Ethereal Diamon, Mythic (Rank 11-12): 2 base points
-            var basePoints =
-                (rank<8) ? 1 :
-                (rank<11) ? 1.5 : 2;
-
-            var blessingHTML = "<hr>";
-            blessingHTML += "Blessing of the $GODS:  <br>";
-            // if(rank<4) {
-            //     blessingHTML += "Not qualified, rank must be at least 4 (Purified Iron)."
-            //     return;
-            // } else {
-            //     blessingHTML += "Rank " + rank + "<br>";
-            // }
-            var points = 0;
-            botgOpponents = botgOpponentSet.size;
-
-            //Base point - Play 20 ranked games + Win 7 ranked games + play against 17 unique opponent
-            blessingHTML += "Base points "
-            if(totalGames >=20 && botg_wins >= 7 && botgOpponents >=17) {
-                blessingHTML += "completed";
-                //blessingHTML += "completed, " + basePoints;
-                //blessingHTML += (basePoints > 1) ? " points" : " point";
-                //blessingHTML += " for rank " + rank;
-                blessingHTML += "<br>";
-                points = basePoints;
-            } else {
-                blessingHTML += (totalGames > 20 ? 20 : totalGames) + "/20 ranked games, ";
-                blessingHTML += (botg_wins > 7 ? 7 : botg_wins) + "/7 wins, ";
-                blessingHTML += (botgOpponents > 17 ? 17 : botgOpponents) + "/17 unique opponents. <br>";
-            }
-            //Bonus point 1 - Play 40 ranked games + Win 14 ranked games + play against 34 unique opponents
-            blessingHTML += "Bonus point 1: "
-            if(totalGames >=40 && botg_wins >= 14 && botgOpponents >=34) {
-                blessingHTML += "completed<br>"
-                points += 1;
-            } else {
-                blessingHTML += (totalGames > 40 ? 40 : totalGames) + "/40 ranked games, ";
-                blessingHTML += (botg_wins > 14 ? 14 : botg_wins) + "/14 wins, ";
-                blessingHTML += (botgOpponents > 34 ? 34 : botgOpponents) + "/34 unique opponents. <br>";
-            }
-            //Bonus point 2 - Play 60 ranked games + Win 21 ranked games + play against 51 unique opponents
-            blessingHTML += "Bonus point 2: "
-            if(totalGames >=60 && botg_wins >= 21 && botgOpponents >=51) {
-                blessingHTML += "completed!<br>"
-                points += 1;
-            } else {
-                blessingHTML += (totalGames > 60 ? 60 : totalGames) + "/60 ranked games, ";
-                blessingHTML += (botg_wins > 21 ? 21 : botg_wins) + "/21 wins, ";
-                blessingHTML += (botgOpponents > 51 ? 51 : botgOpponents) + "/51 unique opponents. <br>";
-            }
-            //blessingHTML += "Total points: " + points;
-            blessing_summary_elem.innerHTML = blessingHTML;
-        }
     }
   </script>
   </body>
